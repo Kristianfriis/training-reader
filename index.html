@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halvmarathon Træningsprogram (Begynder)</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --border-color: #dee2e6;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: #343a40;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* --- STYLING AF DETAILS/SUMMERY FOR UGE --- */
+        .uge-details {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .uge-details summary {
+            list-style: none; /* Fjerner standard pil/trekant */
+            padding: 15px 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            outline: none;
+            border-radius: 8px 8px 0 0;
+            transition: background-color 0.1s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Tilføjer en brugerdefineret pil/ikon */
+        .uge-details summary::before {
+            content: '▶';
+            margin-right: 10px;
+            transition: transform 0.2s;
+        }
+
+        .uge-details[open] summary::before {
+            content: '▼';
+        }
+
+        .uge-details.completed summary {
+            background-color: #e9f5e9; /* Lysegrøn baggrund for fuldførte uger */
+            color: var(--success-color);
+        }
+
+        .uge-details.completed summary::before {
+            content: '✅'; /* Skift ikon til flueben, når fuldført */
+        }
+        
+        .uge-header-text {
+            color: #343a40;
+        }
+
+        .uge-details.completed .uge-header-text {
+            color: var(--success-color);
+        }
+
+
+        .uge-content {
+            padding: 0 20px 10px 20px;
+        }
+        
+        /* Status-badge */
+        .uge-status {
+            font-size: 0.9em;
+            font-weight: normal;
+            padding: 3px 8px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 12px;
+        }
+
+        .uge-details.completed .uge-status {
+            background-color: var(--success-color);
+        }
+        
+        /* --- STYLING AF DAGE --- */
+        .træningsdag {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .træningsdag:last-child {
+            border-bottom: none;
+        }
+
+        .dag-label {
+            width: 80px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .opgave-beskrivelse {
+            flex-grow: 1;
+            margin-right: 20px;
+        }
+
+        /* --- CHECKBOX STYLING --- */
+        .checkbox-container {
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+            flex-shrink: 0;
+            width: 25px; /* Sørg for at label har plads */
+            height: 25px;
+            display: block;
+        }
+
+        .dag-checkbox {
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 25px;
+            width: 25px;
+            background-color: #ccc;
+            border-radius: 4px;
+        }
+
+        .træningsdag.completed .checkmark {
+            background-color: var(--success-color);
+        }
+
+        .træningsdag.completed .opgave-beskrivelse {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+
+        .dag-checkbox:checked ~ .checkmark:after {
+            content: "";
+            position: absolute;
+            display: block;
+            left: 9px;
+            top: 5px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 3px 3px 0;
+            transform: rotate(45deg);
+        }
+
+        .reset-button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .reset-button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🏃‍♂️ Halvmarathon Træningsprogram for Begyndere</h1>
+    <p>Brug fluebenet for at markere en træningsdag som gennemført. Når en hel uge er færdig, skjules den automatisk og markeres som "Fuldført". Din progression gemmes i din browser.</p>
+
+    <div id="træningsplan-container"></div>
+
+    <button class="reset-button" onclick="resetProgression()">Nulstil Progression</button>
+</div>
+
+<script>
+    // Træningsdata kopieret fra JSON-formatet
+    const træningsdata = [
+      {"uge": 1, "dag_1": "1 km rask gang + 6 km roligt løb + 1 km rask gang", "dag_2": "60 min. rask gang", "dag_3": "1 km rask gang + 3 km roligt løb + 3 km fartleg + 2 km afjog"},
+      {"uge": 2, "dag_1": "1 km rask gang + 5 km roligt løb + 1 km rask gang", "dag_2": "1 km rask gang + 5 km roligt løb + 1 km rask gang", "dag_3": "1 km rask gang + 3 km roligt løb + 3 km fartleg + 2 km afjog"},
+      {"uge": 3, "dag_1": "1 km rask gang + 6 km roligt løb + 1 km rask gang", "dag_2": "1 km rask gang + 5 km roligt løb + 1 km rask gang", "dag_3": "1 km rask gang + 2 km roligt løb + 4 km fartleg + 2 km afjog"},
+      {"uge": 4, "dag_1": "1 km rask gang + 1,5 km roligt løb + 4 km jævnt løb + 1,5 km roligt løb", "dag_2": "1 km rask gang + 6 km roligt løb + 1 km rask gang", "dag_3": "1 km rask gang + 2 km roligt løb + 3 x 1500 m int. (pause 2,5 min.) + 2 km afjog"},
+      {"uge": 5, "dag_1": "1 km rask gang + 1,5 km roligt løb + 5 km jævnt løb + 1,5 km roligt løb", "dag_2": "1 km rask gang + 7 km roligt løb + 1 km rask gang", "dag_3": "1 km rask gang + 2 km roligt løb + 3 x 2000 m int. (pause 4 min.) + 2 km afjog"},
+      {"uge": 6, "dag_1": "1 km rask gang + 2 km roligt løb + 5 km jævnt løb + 1,5 km roligt løb", "dag_2": "1 km rask gang + 8 km roligt løb + 1 km rask gang", "dag_3": "1 km rask gang + 2 km roligt løb + 6 x 1000 m int. (pause 2 min.) + 2 km afjog"},
+      {"uge": 7, "dag_1": "1 km rask gang + 2 km roligt løb + 6 km jævnt løb + 1,5 km roligt løb", "dag_2": "1 km rask gang + 9 km roligt løb + 1 km rask gang", "dag_3": "1 km rask gang + 2 km roligt løb + 5 km tempotur + 2 km afjog"},
+      {"uge": 8, "dag_1": "1 km rask gang + 10 km roligt løb + 1 km rask gang", "dag_2": "1 km rask gang + 8 km roligt løb + 1 km rask gang", "dag_3": "1 km rask gang + 2 km roligt løb + 2 x 2000 m int. + 1 x 1500 m int. + 1 x 1000 m int. (pause 2 min.) + 2 km afjog"},
+      {"uge": 9, "dag_1": "1 km rask gang + 12 km roligt løb + 1 km rask gang", "dag_2": "1 km rask gang + 7 km roligt løb + 1 km rask gang", "dag_3": "1 km rask gang + 2 km roligt løb + 4 x 2000 m int. (pause 3 min.) + 3 km afjog"},
+      {"uge": 10, "dag_1": "1 km rask gang + 14 km roligt løb + 1 km rask gang", "dag_2": "1 km rask gang + 7 km roligt løb + 1 km rask gang", "dag_3": "1 km rask gang + 2 km roligt løb + 8 km progressivt løb + 2 km afjog"},
+      {"uge": 11, "dag_1": "1 km rask gang + 14 km roligt løb + 1 km rask gang", "dag_2": "1 km rask gang + 8 km roligt løb + 1 km rask gang", "dag_3": "1 km rask gang + 2 km roligt løb + 3 x 3000 m int. (pause 4 min.) + 3 km afjog"},
+      {"uge": 12, "dag_1": "1 km rask gang + 15 km roligt løb + 1 km rask gang", "dag_2": "1 km rask gang + 8 km roligt løb + 1 km rask gang", "dag_3": "1 km rask gang + 2 km roligt løb + 3 x 3 km int. (pause 4 min.) + 3 km afjog"},
+      {"uge": 13, "dag_1": "1 km rask gang + 15 km roligt løb + 1 km rask gang", "dag_2": "1 km rask gang + 8 km roligt løb + 1 km rask gang", "dag_3": "1 km rask gang + 2 km roligt løb + 8 x 1000 m int. (pause 2 min.) + 3 km afjog"},
+      {"uge": 14, "dag_1": "1 km rask gang + 10 km roligt løb + 1 km rask gang", "dag_2": "1 km rask gang + 6 km roligt løb + 1 km rask gang", "dag_3": "1 km rask gang + 2 km roligt løb + 4 x 1500 m int. (pause 2 min.) + 3 km afjog"},
+      {"uge": 15, "dag_1": "1 km rask gang + 8 km roligt løb + 1 km rask gang", "dag_2": "Gåtur", "dag_3": "Halvmarathon (husk opvarmning og afjogning)"}
+    ];
+
+    const STORAGE_KEY = 'halvmarathonProgression';
+    let progression = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+
+    /**
+     * Tjekker, om en specifik træningsdag er gennemført.
+     */
+    function isCompleted(uge, dagKey) {
+        return progression[`${uge}-${dagKey}`] === true;
+    }
+
+    /**
+     * Tjekker om alle dage i en given uge er gennemført.
+     */
+    function isUgeCompleted(ugeData) {
+        const days = ['dag_1', 'dag_2', 'dag_3'];
+        let totalDays = 0;
+        let completedCount = 0;
+
+        days.forEach(dagKey => {
+            if (ugeData[dagKey]) {
+                totalDays++;
+                if (isCompleted(ugeData.uge, dagKey)) {
+                    completedCount++;
+                }
+            }
+        });
+        return totalDays > 0 && completedCount === totalDays;
+    }
+
+    /**
+     * Opdaterer status for en træningsdag og gemmer i Local Storage.
+     */
+    function updateProgression(uge, dagKey, completed) {
+        const key = `${uge}-${dagKey}`;
+        progression[key] = completed;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(progression));
+        renderPlan(); // Gen-render for at opdatere UI
+    }
+
+    /**
+     * Nulstiller al gemt progression i Local Storage.
+     */
+    function resetProgression() {
+        if (confirm("Er du sikker på, at du vil nulstille al din gemte progression?")) {
+            localStorage.removeItem(STORAGE_KEY);
+            progression = {};
+            renderPlan();
+            alert("Progressionen er nulstillet.");
+        }
+    }
+
+    /**
+     * Opretter HTML-elementet for en individuel træningsdag.
+     */
+    function createDagHTML(uge, dagKey, beskrivelse) {
+        if (!beskrivelse) return '';
+
+        const completed = isCompleted(uge, dagKey);
+        const dagNavn = dagKey.replace('_', ' ').replace('dag', 'Dag');
+        const id = `${uge}-${dagKey}-check`;
+
+        return `
+            <div class="træningsdag ${completed ? 'completed' : ''}">
+                <div class="dag-label">${dagNavn}:</div>
+                <div class="opgave-beskrivelse">${beskrivelse}</div>
+                <label class="checkbox-container">
+                    <input type="checkbox" class="dag-checkbox" id="${id}"
+                           data-uge="${uge}" data-dag="${dagKey}"
+                           ${completed ? 'checked' : ''}
+                           onchange="handleCheckboxChange(this)">
+                    <span class="checkmark"></span>
+                </label>
+            </div>
+        `;
+    }
+
+    /**
+     * Håndterer ændringer i tjekboksene.
+     */
+    function handleCheckboxChange(checkbox) {
+        const uge = parseInt(checkbox.dataset.uge);
+        const dagKey = checkbox.dataset.dag;
+        const completed = checkbox.checked;
+        updateProgression(uge, dagKey, completed);
+    }
+
+    /**
+     * Beregner og returnerer status for en uge.
+     */
+    function getUgeStatus(ugeData) {
+        const days = ['dag_1', 'dag_2', 'dag_3'];
+        let completedCount = 0;
+        let totalDays = 0;
+
+        days.forEach(dagKey => {
+            if (ugeData[dagKey]) {
+                totalDays++;
+                if (isCompleted(ugeData.uge, dagKey)) {
+                    completedCount++;
+                }
+            }
+        });
+
+        if (totalDays === 0) return '';
+        
+        return `${completedCount}/${totalDays}`;
+    }
+
+    /**
+     * Render den komplette træningsplan til DOM'en.
+     */
+    function renderPlan() {
+        const container = document.getElementById('træningsplan-container');
+        container.innerHTML = '';
+
+        træningsdata.forEach(ugeData => {
+            const isFinished = isUgeCompleted(ugeData);
+            const statusText = isFinished ? "Fuldført" : getUgeStatus(ugeData);
+            const isCurrentUge = ugeData.uge === getCurrentUge();
+
+            const ugeHTML = `
+                <details class="uge-details ${isFinished ? 'completed' : ''}" id="uge-${ugeData.uge}" ${!isFinished || isCurrentUge ? 'open' : ''}>
+                    <summary>
+                        <span class="uge-header-text">Uge ${ugeData.uge}</span>
+                        <span class="uge-status">${statusText}</span>
+                    </summary>
+                    <div class="uge-content">
+                        ${createDagHTML(ugeData.uge, 'dag_1', ugeData.dag_1)}
+                        ${createDagHTML(ugeData.uge, 'dag_2', ugeData.dag_2)}
+                        ${createDagHTML(ugeData.uge, 'dag_3', ugeData.dag_3)}
+                    </div>
+                </details>
+            `;
+            container.innerHTML += ugeHTML;
+        });
+    }
+    
+    /**
+     * Forsøger at finde den nuværende uge for at holde den åben.
+     * Den finder den første uge, som IKKE er fuldført.
+     */
+    function getCurrentUge() {
+        const incompleteUge = træningsdata.find(ugeData => !isUgeCompleted(ugeData));
+        return incompleteUge ? incompleteUge.uge : træningsdata.length; // Sidste uge, hvis alt er færdigt
+    }
+
+
+    // Kald render funktionen, når siden indlæses
+    document.addEventListener('DOMContentLoaded', renderPlan);
+</script>
+
+</body>
+</html>
