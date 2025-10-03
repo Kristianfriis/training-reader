@@ -2,7 +2,7 @@
   "name": "Halvmarathon Træningsprogram",
   "short_name": "Halvmarathon",
   "description": "Dit personlige 15-ugers træningsprogram til halvmaraton for begyndere. Følg din progression og tjek dage af.",
-  "start_url": "./halvmarathon.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f8f9fa",
   "theme_color": "#007bff",
